@@ -81,3 +81,17 @@
   $     -c, --compile                    Compile source code
 
 6. Run deploy
+
+==============================================================================
+
+Please consider supporting our work by trying out Digital Ocean.
+
+If you use our promo code https://www.digitalocean.com/?refcode=92f4a41237d8 to
+register with Digital Ocean you will get $10,- credit (which will get you a 
+512MB linux droplet for two months).
+
+Once you spend $25,- with them on server costs they'll give us $25,- credit
+in return which we will use to cover our server costs.
+
+When asked for the type of image to use please choose Ubuntu 14.04 64 bit
+version since that's what this deployment tool was based on.
