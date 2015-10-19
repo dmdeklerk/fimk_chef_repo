@@ -1,0 +1,11 @@
+#!/bin/sh
+# must check node['nxt']['properties']['isTestNet'] to see if we are on testnet
+echo "Stopping NXT"
+stop nxt
+echo "Creating backup"
+FOLDER=<%= @properties[:isTestnet]=='true' ? 'nxt_test_db' : 'nxt_db' %>
+DIR_NAME=$FOLDER-$(date +%Y%m%d)
+mkdir -p /home/nxt/backup/$DIR_NAME
+cp -a /home/nxt/nxt/$FOLDER/. /home/nxt/backup/$DIR_NAME/
+echo "Backup saved, starting NXT"
+start nxt

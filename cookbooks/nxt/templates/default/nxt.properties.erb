@@ -1,0 +1,7 @@
+<% @properties.each do |name, value| %>
+nxt.<%= name %>=<%= value %>
+<% end %>
+nxt.myAddress=<%= node["ipaddress"] %>
+#nxt.allowedBotHosts=127.0.0.1; localhost; <%= node["ipaddress"] %>; 0:0:0:0:0:0:0:1;
+#nxt.allowedUserHosts=127.0.0.1; localhost; <%= node["ipaddress"] %>; 0:0:0:0:0:0:0:1;
+#nxt.communicationLoggingMask=4

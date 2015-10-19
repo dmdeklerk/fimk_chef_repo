@@ -1,0 +1,83 @@
+1. Install Ruby
+   
+  You need Ruby installed before you continue.
+  https://www.ruby-lang.org/en/documentation/installation/
+
+2. Install bundler
+
+  You need bundler installed.
+  http://bundler.io/
+
+  $ gem install bundler
+
+3. Run bundler to install dependencies
+
+  $ bundle install
+
+4. Create a config.json
+   You either create a file called config.json in this directory or
+   pass the --config-file paramater to deploy script.
+
+   Config file contents
+
+    {
+      "java_bin": "/home/dirk/jdk1.8.0/bin",     # java executable dir
+      "user": "root",                            # ssh user
+      "password": "secret",                      # ssh password
+      "identity": "/home/dirk/.ssh/id_rsa",      # ssh identity
+      "run_list": ["nxt","fimk"],                # what should be installed/enabled
+      "source_dir": {                            # source directory
+        "fimk": "/home/dirk/git/fimk",
+        "nxt": "/home/dirk/git/nxt-plus"
+      },
+      "zip_file": {                              # deployment zip file
+        "fimk": "/home/dirk/git/fimk/fim.zip",
+        "nxt": "/home/dirk/git/nxt-plus/nxt.zip"
+      },
+      "attributes": {                            # base chef attributes (applied to all nodes)
+        "ssmtp": {
+          "Root": "user@gmail.com",
+          "Mailhub": "smtp.mailapp.com:3344",
+          "RewriteDomain": "fimk.fi",
+          "AuthUser": "user@gmail.com",
+          "AuthPass": "secret-password"
+        },
+        "fimk": {
+          "properties": {
+            "gossipEnabled": "true"
+          }
+        }
+      },  
+      "nodes": {                                 # hash of nodes
+        "188.166.0.145": {
+          "identity": "/home/dirk/.ssh/id_rsa",  # override ssh identity 
+          "user": "root",                        # override ssh user 
+          "run_list": ["nxt","fimk"],            # override run_list
+          "attributes": {                        # override attributes
+            "fimk": {
+              "properties": {
+                "isTestnet": "true",
+              }
+            }
+          }
+        }
+      }
+    }
+
+5. Look up help with -h flag
+
+  $ ruby deploy.rb -h #
+  $ Usage: deploy.rb [options]
+  $     -v, --[no-]verbose               Run verbosely
+  $     -n, --nodes X,Y,Z                Override list of nodes'
+  $     -r, --run-list fimk,nxt          Override runlist (allowed are 'fimk' and/or 'nxt')
+  $     -u, --user [ROOT]                SSH user
+  $     -p, --force-prepare              Force run 'knife solo prepare'
+  $     -i, --identity [FILE]            SSH identity file
+  $     -f, --config-file [FILE]         Config file
+  $     -s, --source-dir [DIR]           Source tree
+  $     -z, --zip-file [FILE]            Distribution as zip file
+  $     -j, --java-bin [FILE]            Java binary
+  $     -c, --compile                    Compile source code
+
+6. Run deploy
