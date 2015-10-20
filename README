@@ -35,7 +35,7 @@
         "nxt": "/home/dirk/git/nxt-plus/nxt.zip"
       },
       "attributes": {                            # base chef attributes (applied to all nodes)
-        "ssmtp": {
+        "ssmtp": {                               # leave out to not have email notifications
           "Root": "user@gmail.com",
           "Mailhub": "smtp.mailapp.com:3344",
           "RewriteDomain": "fimk.fi",
