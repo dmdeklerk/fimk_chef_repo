@@ -167,7 +167,6 @@ nodes.each do |host|
   # -p port
   if options[:prepare] || (not File.exist? chef_conf_file(host)) then
     exec(current_dir, "bundle exec knife solo prepare #{user}@#{host}")    
-    chef_conf(host, run_list, (conf['attributes']||{}).deep_merge(config['attributes']||{}))
   end
 
   run_list.each do |engine|
@@ -175,6 +174,7 @@ nodes.each do |host|
     exec_ssh(host, user, "rm #{app_dir[engine]}/conf/nxt.properties")
   end
 
+  chef_conf(host, run_list, (conf['attributes']||{}).deep_merge(config['attributes']||{}))
   exec(current_dir, "bundle exec knife solo cook #{user}@#{host}")
 
   run_list.each do |engine|
