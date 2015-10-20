@@ -16,13 +16,13 @@ exec java -cp nxt.jar:lib/*:conf nxt.Nxt
 
 <% if node[:ssmtp] then %>
 post-start script
-  TEMP_FILE=/tmp/temp_mail_<%= @to %>.txt
+  TEMP_FILE=/tmp/temp_nxt_mail<%= @to %>.txt
   rm -f $TEMP_FILE; touch $TEMP_FILE
 
   echo "To: <%= @to %>" >> $TEMP_FILE
   echo "From: <%= @from %>" >> $TEMP_FILE
   echo "Subject: NXT <%= @from %>\n" >> $TEMP_FILE
-  echo "NXT on <%= @from %> started" >> $TEMP_FILE
+  echo "STARTED" >> $TEMP_FILE
 
   ssmtp <%= @to %> < $TEMP_FILE
 end script
@@ -31,14 +31,14 @@ post-stop script
   # Wait untill the process fully completes
   while pgrep -f 'nxt.jar' > /dev/null; do sleep 1; done
 
-  TEMP_FILE=/tmp/temp_mail_<%= @to %>.txt
+  TEMP_FILE=/tmp/temp_nxt_mail<%= @to %>.txt
   LOG_FILE=<%= @log_file %>
   rm -f $TEMP_FILE; touch $TEMP_FILE
 
   echo "To: <%= @to %>" >> $TEMP_FILE
   echo "From: <%= @from %>" >> $TEMP_FILE
   echo "Subject: NXT <%= @from %>\n" >> $TEMP_FILE
-  echo "This server stopped" >> $TEMP_FILE
+  echo "STOPPED" >> $TEMP_FILE
   # echo "================================================" >> $TEMP_FILE
   # echo "Application log" >> $TEMP_FILE
   # echo "================================================" >> $TEMP_FILE

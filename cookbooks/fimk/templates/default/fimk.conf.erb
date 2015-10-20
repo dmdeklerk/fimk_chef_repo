@@ -16,13 +16,13 @@ exec java -cp fim.jar:lib/*:conf nxt.Nxt
 
 <% if node[:ssmtp] then %>
 post-start script
-  TEMP_FILE=/tmp/temp_mail_<%= @to %>.txt
+  TEMP_FILE=/tmp/temp_fimk_mail_<%= @to %>.txt
   rm -f $TEMP_FILE; touch $TEMP_FILE
 
   echo "To: <%= @to %>" >> $TEMP_FILE
   echo "From: <%= @from %>" >> $TEMP_FILE
   echo "Subject: FIMK <%= @from %>\n" >> $TEMP_FILE
-  echo "FIMK on <%= @from %> started" >> $TEMP_FILE
+  echo "STARTED" >> $TEMP_FILE
 
   ssmtp <%= @to %> < $TEMP_FILE
 end script
@@ -30,14 +30,14 @@ end script
 post-stop script
   while pgrep -f 'fim.jar' > /dev/null; do sleep 1; done
 
-  TEMP_FILE=/tmp/temp_mail_<%= @to %>.txt
+  TEMP_FILE=/tmp/temp_fimk_mail_<%= @to %>.txt
   LOG_FILE=<%= @log_file %>
   rm -f $TEMP_FILE; touch $TEMP_FILE
 
   echo "To: <%= @to %>" >> $TEMP_FILE
   echo "From: <%= @from %>" >> $TEMP_FILE
   echo "Subject: FIMK <%= @from %>\n" >> $TEMP_FILE
-  echo "This server stopped" >> $TEMP_FILE
+  echo "STOPPED" >> $TEMP_FILE
   # echo "================================================" >> $TEMP_FILE
   # echo "Application log" >> $TEMP_FILE
   # echo "================================================" >> $TEMP_FILE
