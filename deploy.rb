@@ -128,6 +128,10 @@ end
 # Either process all nodes in config file or limit to --nodes if argument was provided
 nodes = options[:nodes]||config['nodes'].select { |k,node| !node.include?('exclude') }.keys
 
+puts "Deploy will be run on #{nodes.to_s}"
+puts "Click ENTER to continue"
+gets
+
 # Provision each node individually
 nodes.each do |host|
   conf=config['nodes'][host]
@@ -138,7 +142,7 @@ nodes.each do |host|
 
   trace("Deploying #{run_list} on #{host}")
 
-  exec(current_dir, "ssh-keygen -R #{host}")
+  # exec(current_dir, "ssh-keygen -R #{host}")
 
   # Process all engines
   run_list.each do |engine|

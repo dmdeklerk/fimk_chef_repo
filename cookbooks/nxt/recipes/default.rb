@@ -143,9 +143,8 @@ if node[:ssmtp] then
 end
 
 template "/etc/cron.daily/nxt_backup" do
-#template "/etc/cron.hourly/nxt_backup" do
   source    "nxt_backup.sh.erb"
-  mode      00644
+  mode      '0755'
   owner     "root"
   group     "root"
   variables :properties => node[:nxt][:properties]

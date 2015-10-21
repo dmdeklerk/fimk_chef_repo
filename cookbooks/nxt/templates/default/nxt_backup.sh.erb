@@ -9,3 +9,4 @@ mkdir -p /home/nxt/backup/$DIR_NAME
 cp -a /home/nxt/nxt/$FOLDER/. /home/nxt/backup/$DIR_NAME/
 echo "Backup saved, starting NXT"
 start nxt
+find /home/nxt/backup/ -mtime +7 -exec rm {} \;

@@ -145,7 +145,7 @@ end
 template "/etc/cron.daily/fimk_backup" do
 #template "/etc/cron.hourly/fimk_backup" do
   source    "fimk_backup.sh.erb"
-  mode      00644
+  mode      '0755'
   owner     "root"
   group     "root"
   variables :properties => node[:fimk][:properties]
