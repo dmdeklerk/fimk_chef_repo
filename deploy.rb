@@ -26,13 +26,13 @@ OptionParser.new do |opts|
   end
   opts.on("-r", "--run-list fimk,nxt", Array, "Override runlist (allowed are 'fimk' and/or 'nxt')") do |run_list|
     options[:run_list] = run_list
-  end  
+  end
   opts.on("-u","--user [ROOT]", "SSH user") do |user|
     options[:user] = user
   end
   opts.on("-p","--force-prepare", "Force run 'knife solo prepare'") do |prepare|
     options[:prepare] = prepare
-  end  
+  end
   opts.on("-i","--identity [FILE]", "SSH identity file") do |identity|
     options[:identity] = identity
   end
@@ -47,7 +47,7 @@ OptionParser.new do |opts|
   end
   opts.on("-j","--java-bin [FILE]", "Java binary") do |java_bin|
     options[:java_bin] = java_bin
-  end  
+  end
   opts.on("-c","--compile", "Compile source code") do |compile|
     options[:compile] = compile
   end
@@ -146,22 +146,29 @@ nodes.each do |host|
 
   # Process all engines
   run_list.each do |engine|
-    abort("Unsupported run_list argument") unless ['nxt','fimk'].include?(engine)
+    supported = ['nxt','fimk','role[webserver]']
+    abort("Unsupported run_list argument (supported: #{supported})") unless supported.include?(engine)
 
-    # Do we compile or use the zip?
-    if options[:compile] then
-      source_dir = options[:source_dir]||config['source_dir'][engine]
-      trace("Compiling from source --source-dir=#{source_dir}")      
-      abort("#{engine} source-dir does not exist") unless File.exist?(source_dir)
-      compile(engine, source_dir)
-    else 
-      zip_file = options[:zip_file]||config['zip_file'][engine]
-      abort("#{engine} zip-file does not exist") unless File.exist?(zip_file)
-      trace("Deploying from zip file --zip-file=#{zip_file}")
-      file_name = File.basename(zip_file)
-      abort("--zip-file name must be fim.zip or nxt.zip") unless ['nxt.zip','fim.zip'].include?(file_name)
-      exec(files_dir[engine], "rm -f #{file_name}") 
-      exec(current_dir, "cp -u #{zip_file} #{files_dir[engine]}")
+    if ['nxt','fimk'].include? engine then
+      puts "Deploying #{engine}"
+      # Do we compile or use the zip?
+      if options[:compile] then
+        source_dir = options[:source_dir]||config['source_dir'][engine]
+        trace("Compiling from source --source-dir=#{source_dir}")
+        abort("#{engine} source-dir does not exist") unless File.exist?(source_dir)
+        compile(engine, source_dir)
+      else
+        zip_file = options[:zip_file]||config['zip_file'][engine]
+        abort("#{engine} zip-file does not exist") unless File.exist?(zip_file)
+        trace("Deploying from zip file --zip-file=#{zip_file}")
+        file_name = File.basename(zip_file)
+        abort("--zip-file name must be fim.zip or nxt.zip") unless ['nxt.zip','fim.zip'].include?(file_name)
+        exec(files_dir[engine], "rm -f #{file_name}") 
+        exec(current_dir, "cp -u #{zip_file} #{files_dir[engine]}")
+      end
+    end
+    if 'role[webserver]'==engine then
+      puts "Deploying webserver"
     end
   end
 
@@ -170,19 +177,23 @@ nodes.each do |host|
   # -P password
   # -p port
   if options[:prepare] || (not File.exist? chef_conf_file(host)) then
-    exec(current_dir, "bundle exec knife solo prepare #{user}@#{host}")    
+    exec(current_dir, "bundle exec knife solo prepare #{user}@#{host}")
   end
 
   run_list.each do |engine|
-    exec_ssh(host, user, "stop #{engine}")
-    exec_ssh(host, user, "rm #{app_dir[engine]}/conf/nxt.properties")
+    if ['nxt','fimk'].include? engine then
+      exec_ssh(host, user, "stop #{engine}")
+      exec_ssh(host, user, "rm #{app_dir[engine]}/conf/nxt.properties")
+    end
   end
 
   chef_conf(host, run_list, (conf['attributes']||{}).deep_merge(config['attributes']||{}))
   exec(current_dir, "bundle exec knife solo cook #{user}@#{host}")
 
   run_list.each do |engine|
-    exec_ssh(host, user, "start #{engine}")
+    if ['nxt','fimk'].include? engine then
+      exec_ssh(host, user, "start #{engine}")
+    end
   end
 end
 
