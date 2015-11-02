@@ -10,3 +10,4 @@ cp -a /home/fim/fim/$FOLDER/. /home/fim/backup/$DIR_NAME/
 echo "Backup saved, starting FIMK"
 start fimk
 find /home/fim/backup/ -mtime +7 -exec rm {} \;
+find /home/fim/backup/ -type d -empty -delete
