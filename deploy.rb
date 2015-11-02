@@ -144,30 +144,30 @@ nodes.each do |host|
 
   # exec(current_dir, "ssh-keygen -R #{host}")
 
-  # Process all engines
-  run_list.each do |engine|
+  # Process all recipes/roles
+  run_list.each do |entry|
     supported = ['nxt','fimk','role[webserver]']
-    abort("Unsupported run_list argument (supported: #{supported})") unless supported.include?(engine)
+    abort("Unsupported run_list argument (supported: #{supported})") unless supported.include?(entry)
 
-    if ['nxt','fimk'].include? engine then
-      puts "Deploying #{engine}"
+    if ['nxt','fimk'].include? entry then
+      puts "Deploying #{entry}"
       # Do we compile or use the zip?
       if options[:compile] then
-        source_dir = options[:source_dir]||config['source_dir'][engine]
+        source_dir = options[:source_dir]||config['source_dir'][entry]
         trace("Compiling from source --source-dir=#{source_dir}")
-        abort("#{engine} source-dir does not exist") unless File.exist?(source_dir)
-        compile(engine, source_dir)
+        abort("#{entry} source-dir does not exist") unless File.exist?(source_dir)
+        compile(entry, source_dir)
       else
-        zip_file = options[:zip_file]||config['zip_file'][engine]
-        abort("#{engine} zip-file does not exist") unless File.exist?(zip_file)
+        zip_file = options[:zip_file]||config['zip_file'][entry]
+        abort("#{entry} zip-file does not exist") unless File.exist?(zip_file)
         trace("Deploying from zip file --zip-file=#{zip_file}")
         file_name = File.basename(zip_file)
         abort("--zip-file name must be fim.zip or nxt.zip") unless ['nxt.zip','fim.zip'].include?(file_name)
-        exec(files_dir[engine], "rm -f #{file_name}") 
-        exec(current_dir, "cp -u #{zip_file} #{files_dir[engine]}")
+        exec(files_dir[entry], "rm -f #{file_name}") 
+        exec(current_dir, "cp -u #{zip_file} #{files_dir[entry]}")
       end
     end
-    if 'role[webserver]'==engine then
+    if 'role[webserver]'==entry then
       puts "Deploying webserver"
     end
   end
@@ -180,19 +180,19 @@ nodes.each do |host|
     exec(current_dir, "bundle exec knife solo prepare #{user}@#{host}")
   end
 
-  run_list.each do |engine|
-    if ['nxt','fimk'].include? engine then
-      exec_ssh(host, user, "stop #{engine}")
-      exec_ssh(host, user, "rm #{app_dir[engine]}/conf/nxt.properties")
+  run_list.each do |entry|
+    if ['nxt','fimk'].include? entry then
+      exec_ssh(host, user, "stop #{entry}")
+      exec_ssh(host, user, "rm #{app_dir[entry]}/conf/nxt.properties")
     end
   end
 
   chef_conf(host, run_list, (conf['attributes']||{}).deep_merge(config['attributes']||{}))
   exec(current_dir, "bundle exec knife solo cook #{user}@#{host}")
 
-  run_list.each do |engine|
-    if ['nxt','fimk'].include? engine then
-      exec_ssh(host, user, "start #{engine}")
+  run_list.each do |entry|
+    if ['nxt','fimk'].include? entry then
+      exec_ssh(host, user, "start #{entry}")
     end
   end
 end
