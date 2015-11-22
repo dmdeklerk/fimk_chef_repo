@@ -142,20 +142,12 @@ if node[:ssmtp] then
   end
 end
 
-template "/etc/cron.daily/fimk_backup" do
-#template "/etc/cron.hourly/fimk_backup" do
-  source    "fimk_backup.sh.erb"
-  mode      '0755'
-  owner     "root"
-  group     "root"
-  variables :properties => node[:fimk][:properties]
+if ['hourly','dayly','weekly'].include? node[:fimk][:properties][:backup] then
+  template "/etc/cron.#{node[:fimk][:properties][:backup]}/fimk_backup" do
+    source    "fimk_backup.sh.erb"
+    mode      '0755'
+    owner     "root"
+    group     "root"
+    variables :properties => node[:fimk][:properties]
+  end
 end
-
-# cron 'backup_blockchain' do
-#   action :create
-#   # hour '1' # everyday at 1
-#   hour '*/1' # every hour
-#   # minute '*/1' # every minute
-#   user 'fim'
-#   command 'sh /home/fim/fimk_backup.sh'
-# end
