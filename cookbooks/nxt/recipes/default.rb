@@ -142,7 +142,7 @@ if node[:ssmtp] then
   end
 end
 
-if ['hourly','dayly','weekly'].include? node[:nxt][:properties][:backup] then
+if ['hourly','daily','weekly'].include? node[:nxt][:properties][:backup] then
   template "/etc/cron.#{node[:nxt][:properties][:backup]}/nxt_backup" do
     source    "nxt_backup.sh.erb"
     mode      '0755'

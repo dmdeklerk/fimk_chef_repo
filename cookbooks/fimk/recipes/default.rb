@@ -142,7 +142,7 @@ if node[:ssmtp] then
   end
 end
 
-if ['hourly','dayly','weekly'].include? node[:fimk][:properties][:backup] then
+if ['hourly','daily','weekly'].include? node[:fimk][:properties][:backup] then
   template "/etc/cron.#{node[:fimk][:properties][:backup]}/fimk_backup" do
     source    "fimk_backup.sh.erb"
     mode      '0755'
