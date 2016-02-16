@@ -14,8 +14,8 @@ chdir /home/fim/fim
 
 exec java -cp fim.jar:lib/*:conf nxt.Nxt
 
-<% if node[:ssmtp] then %>
 post-start script
+<% if node[:ssmtp] then %>
   TEMP_FILE=/tmp/temp_fimk_mail_<%= @to %>.txt
   rm -f $TEMP_FILE; touch $TEMP_FILE
 
@@ -27,11 +27,16 @@ post-start script
   echo <%= "http://#{node['ipaddress']}:7886/nxt?requestType=getState" %> >> $TEMP_FILE
 
   ssmtp <%= @to %> < $TEMP_FILE
+<% end %>
+<% if node[:fimk][:startForgingURL] then %>
+  curl <%= node[:fimk][:startForgingURL] %>
+<% end %>
 end script
 
 post-stop script
   while pgrep -f 'fim.jar' > /dev/null; do sleep 1; done
 
+<% if node[:ssmtp] then %>
   TEMP_FILE=/tmp/temp_fimk_mail_<%= @to %>.txt
   LOG_FILE=<%= @log_file %>
   rm -f $TEMP_FILE; touch $TEMP_FILE
@@ -44,11 +49,6 @@ post-stop script
   echo <%= "http://#{node['ipaddress']}:7886/nxt?requestType=getState" %> >> $TEMP_FILE
 
   ssmtp <%= @to %> < $TEMP_FILE
-  sleep 10
-end script
-<% else %>
-post-stop script
-  while pgrep -f 'fim.jar' > /dev/null; do sleep 1; done
-  sleep 10
-end script
 <% end %>
+  sleep 10
+end script
