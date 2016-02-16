@@ -1,0 +1,5 @@
+default['fimk_replicate']['root_password'] 	= 'password'
+default['fimk_replicate']['mysql_version'] 	= '5.5'
+default['fimk_replicate']['database_name'] 	= 'fimk_replicate'
+default['fimk_replicate']['db_user_name'] 	= 'sqluser'
+default['fimk_replicate']['db_user_pwd'] 	= 'sqluserpw'
