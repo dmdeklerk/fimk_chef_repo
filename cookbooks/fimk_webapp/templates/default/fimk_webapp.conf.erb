@@ -1,0 +1,54 @@
+description "FIMK Webapp"
+
+start on filesystem or runlevel [2345]
+stop on runlevel [!2345]
+
+console log
+# setuid fimk_webapp
+
+respawn
+
+env PRODUCTION=production
+env IS_TESTNET="<%= @is_testnet %>"
+env FIMK_PORT="<%= @fimk_port %>"
+env FIMK_URL="<%= @fimk_url %>"
+env FIMK_SECRET="<%= @fimk_secret %>"
+env RECAPTCHA="<%= @recaptcha %>"
+env VERIFICATION_URL="<%= @verification_url %>"
+env DATABASE_URL="<%= @database_url %>"
+
+chdir /home/fimk_webapp/fimk_webapp
+
+# exec <%= @node_bin %> app/server.js
+
+env USER=fimk_webapp
+exec su -c "<%= @node_bin %> app/server.js" $USER
+
+
+<% if node[:ssmtp] then %>
+post-start script
+  TEMP_FILE=/tmp/temp_fimk_webapp_mail_<%= @to %>.txt
+  rm -f $TEMP_FILE; touch $TEMP_FILE
+
+  echo "To: <%= @to %>" >> $TEMP_FILE
+  echo "From: <%= @from %>" >> $TEMP_FILE
+  echo "Subject: FIMK <%= @from %>\n" >> $TEMP_FILE
+  echo "STARTED" >> $TEMP_FILE
+
+  ssmtp <%= @to %> < $TEMP_FILE
+end script
+
+post-stop script
+  TEMP_FILE=/tmp/temp_fimk_webapp_mail_<%= @to %>.txt
+  LOG_FILE=<%= @log_file %>
+  rm -f $TEMP_FILE; touch $TEMP_FILE
+
+  echo "To: <%= @to %>" >> $TEMP_FILE
+  echo "From: <%= @from %>" >> $TEMP_FILE
+  echo "Subject: FIMK <%= @from %>\n" >> $TEMP_FILE
+  echo "STOPPED" >> $TEMP_FILE
+
+  ssmtp <%= @to %> < $TEMP_FILE
+  sleep 10
+end script
+<% end %>

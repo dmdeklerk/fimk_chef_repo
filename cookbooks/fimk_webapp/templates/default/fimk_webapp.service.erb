@@ -1,0 +1,22 @@
+[Service]
+ExecStart=[node binary] /home/fimk_webapp/fimk_webapp/app/server.js
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=fimk_webapp
+User=fimk_webapp
+Group=fimk_webapp
+Environment=NODE_ENV=production
+Environment=PRODUCTION=production
+Environment=IS_TESTNET="<%= @is_testnet %>"
+Environment=FIMK_PORT="<%= @fimk_port %>"
+Environment=FIMK_URL="<%= @fimk_url %>"
+Environment=FIMK_SECRET="<%= @fimk_secret %>"
+Environment=RECAPTCHA="<%= @recaptcha %>"
+Environment=VERIFICATION_URL="<%= @verification_url %>"
+Environment=DATABASE_URL="<%= @database_url %>"
+Environment=CERT_FILE="<%= @cert_file %>"
+Environment=KEY_FILE="<%= @key_file %>"
+
+[Install]
+WantedBy=multi-user.target
