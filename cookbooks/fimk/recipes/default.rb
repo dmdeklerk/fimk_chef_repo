@@ -50,9 +50,28 @@ execute "addding ppa:brightbox/ruby-ng" do
   returns [0,1]
 end
 
-execute "update package index" do
+# execute "update package index" do
+#   command "sudo apt-get update"
+#   action :run
+# end
+
+execute "apt-get-update" do
   command "apt-get update"
-  action :run
+  ignore_failure true
+  action :nothing
+end
+
+package "update-notifier-common" do
+  notifies :run, resources(:execute => "apt-get-update"), :immediately
+end
+
+execute "apt-get-update-periodic" do
+  command "apt-get update"
+  ignore_failure true
+  only_if do
+   File.exists?('/var/lib/apt/periodic/update-success-stamp') &&
+   File.mtime('/var/lib/apt/periodic/update-success-stamp') < Time.now - 86400
+  end
 end
 
 execute "accept oracle license" do
@@ -78,7 +97,7 @@ end
 
 apt_package "build-essential" do
   action :install
-end 
+end
 
 cookbook_file "/home/fim/fim.zip" do
   source "fim.zip"
