@@ -9,7 +9,8 @@ config={}
 current_dir=File.dirname(__FILE__)
 files_dir= {
   'fimk' => File.expand_path(File.join(current_dir, 'cookbooks/fimk/files/default')),
-  'nxt' => File.expand_path(File.join(current_dir, 'cookbooks/nxt/files/default'))
+  'nxt' => File.expand_path(File.join(current_dir, 'cookbooks/nxt/files/default')),
+  'fimk_webapp' => File.expand_path(File.join(current_dir, 'cookbooks/fimk_webapp/files/default'))
 }
 app_dir={
   'fimk' => '/home/fim/fim',
@@ -24,7 +25,7 @@ OptionParser.new do |opts|
   opts.on("-n", "--nodes X,Y,Z", Array, "Override list of nodes'") do |nodes|
     options[:nodes] = nodes
   end
-  opts.on("-r", "--run-list fimk,nxt", Array, "Override runlist (allowed are 'fimk' and/or 'nxt')") do |run_list|
+  opts.on("-r", "--run-list fimk,nxt,fimk_webapp,fimk_replicate", Array, "Override runlist (allowed are 'fimk','nxt','fimk_webapp','fimk_replicate')") do |run_list|
     options[:run_list] = run_list
   end
   opts.on("-u","--user [ROOT]", "SSH user") do |user|
@@ -71,13 +72,14 @@ define_method(:exec) do |dir, cmd|
   Dir.chdir(dir) { system cmd }
 end
 
-define_method(:exec_ssh) do |host, user, cmd, identity=nil|
+define_method(:exec_ssh) do |host, user, cmd, port, identity=nil|
   script  = "ssh "
   #script += "-v " if options[:verbose]
   script += "#{host} "
-  script += "-l #{user} "
   script += "-i #{identity} " if identity
-  script += "-C '#{cmd}'"
+  script += "-l #{user} "
+  script += "-p #{port} "
+  script += "-C '#{cmd}' "
   exec(current_dir, script)
 end
 
@@ -101,7 +103,7 @@ define_method(:compile) do |engine, source_dir|
   puts "Compilation succeeded"
 
   file_name = engine=='fimk' ? 'fim.zip' : 'nxt.zip'
-  exec(files_dir[engine], "rm -f #{file_name}") 
+  exec(files_dir[engine], "rm -f #{file_name}")
   exec(source_dir, "mv -f -u #{file_name} #{files_dir[engine]}")
 end
 
@@ -112,7 +114,7 @@ end
 define_method(:chef_conf) do |host, run_list, attributes|
   base = {
     "run_list" => run_list,
-    "automatic" => { 
+    "automatic" => {
       "ipaddress" => host
     }
   }
@@ -122,6 +124,15 @@ define_method(:chef_conf) do |host, run_list, attributes|
   File.open(chef_conf_file(host),"w") do |f|
     f.write(JSON.pretty_generate(base))
   end
+end
+
+define_method(:package_webapp) do
+  target_dir = File.expand_path(File.join(current_dir, 'cookbooks/fimk_webapp/files/default'))
+  source_dir = config['source_dir']['fimk_webapp']
+  exec(source_dir, 'sh compress.sh')
+  exec(files_dir['fimk_webapp'], "rm -f app.js")
+  file_name = config['zip_file']['fimk_webapp']
+  exec(source_dir, "mv -f -u #{file_name} #{files_dir['fimk_webapp']}")
 end
 
 # Determine on what nodes we are operating.
@@ -137,7 +148,7 @@ nodes.each do |host|
   conf=config['nodes'][host]
   identity=options[:identity]||conf['identity']
   user=options[:user]||conf['user']||config['user']
-  port=options[:user]||conf['user']||config['user']
+  port=conf['port']||22
   run_list=options[:run_list]||conf['run_list']||config['run_list']||[]
 
   trace("Deploying #{run_list} on #{host}")
@@ -146,7 +157,7 @@ nodes.each do |host|
 
   # Process all recipes/roles
   run_list.each do |entry|
-    supported = ['nxt','fimk','role[webserver]']
+    supported = ['nxt','fimk','role[webserver]','fimk_webapp','fimk_replicate']
     abort("Unsupported run_list argument (supported: #{supported})") unless supported.include?(entry)
 
     if ['nxt','fimk'].include? entry then
@@ -163,12 +174,19 @@ nodes.each do |host|
         trace("Deploying from zip file --zip-file=#{zip_file}")
         file_name = File.basename(zip_file)
         abort("--zip-file name must be fim.zip or nxt.zip") unless ['nxt.zip','fim.zip'].include?(file_name)
-        exec(files_dir[entry], "rm -f #{file_name}") 
+        exec(files_dir[entry], "rm -f #{file_name}")
         exec(current_dir, "cp -u #{zip_file} #{files_dir[entry]}")
       end
     end
     if 'role[webserver]'==entry then
       puts "Deploying webserver"
+    end
+    if 'fimk_replicate'==entry then
+      puts "Deploying FIMK replicate"
+    end
+    if 'fimk_webapp'==entry then
+      puts "Deploying FIMK webapp"
+      package_webapp
     end
   end
 
@@ -177,22 +195,28 @@ nodes.each do |host|
   # -P password
   # -p port
   if options[:prepare] || (not File.exist? chef_conf_file(host)) then
-    exec(current_dir, "bundle exec knife solo prepare #{user}@#{host}")
+    exec(current_dir, "bundle exec knife solo prepare #{user}@#{host} -p #{port}")
   end
 
   run_list.each do |entry|
     if ['nxt','fimk'].include? entry then
-      exec_ssh(host, user, "stop #{entry}")
-      exec_ssh(host, user, "rm #{app_dir[entry]}/conf/nxt.properties")
+      exec_ssh(host, user, "stop #{entry}", port)
+      exec_ssh(host, user, "rm #{app_dir[entry]}/conf/nxt.properties", port)
+    end
+    if ['fimk_webapp'].include? entry then
+      exec_ssh(host, user, "stop fimk_webapp", port)
     end
   end
 
   chef_conf(host, run_list, (conf['attributes']||{}).deep_merge(config['attributes']||{}))
-  exec(current_dir, "bundle exec knife solo cook #{user}@#{host}")
+  exec(current_dir, "bundle exec knife solo cook #{user}@#{host} -p #{port}")
 
   run_list.each do |entry|
     if ['nxt','fimk'].include? entry then
-      exec_ssh(host, user, "start #{entry}")
+      exec_ssh(host, user, "start #{entry}", port)
+    end
+    if ['fimk_webapp'].include? entry then
+      exec_ssh(host, user, "start fimk_webapp", port)
     end
   end
 end
