@@ -1,0 +1,54 @@
+description "fimk_test server"
+
+start on filesystem or runlevel [2345]
+stop on runlevel [!2345]
+
+setuid fimk_test
+
+respawn
+
+chdir /home/fimk_test/fim
+
+# this application is a "resource hog"
+# oom score 1000
+
+exec java -cp fimk_test.jar:lib/*:conf nxt.Nxt
+
+post-start script
+<% if node[:ssmtp] then %>
+  TEMP_FILE=/tmp/temp_fimk_test_mail_<%= @to %>.txt
+  rm -f $TEMP_FILE; touch $TEMP_FILE
+
+  echo "To: <%= @to %>" >> $TEMP_FILE
+  echo "From: <%= @from %>" >> $TEMP_FILE
+  echo "Subject: FIMK <%= @from %>\n" >> $TEMP_FILE
+  echo "STARTED" >> $TEMP_FILE
+  echo <%= "http://#{node['ipaddress']}:6886/nxt?requestType=getState" %> >> $TEMP_FILE
+  echo <%= "http://#{node['ipaddress']}:7886/nxt?requestType=getState" %> >> $TEMP_FILE
+
+  ssmtp <%= @to %> < $TEMP_FILE
+<% end %>
+<% if node[:fimk_test][:startForgingURL] then %>
+  curl <%= node[:fimk_test][:startForgingURL] %>
+<% end %>
+end script
+
+post-stop script
+  while pgrep -f 'fimk_test.jar' > /dev/null; do sleep 1; done
+
+<% if node[:ssmtp] then %>
+  TEMP_FILE=/tmp/temp_fimk_test_mail_<%= @to %>.txt
+  LOG_FILE=<%= @log_file %>
+  rm -f $TEMP_FILE; touch $TEMP_FILE
+
+  echo "To: <%= @to %>" >> $TEMP_FILE
+  echo "From: <%= @from %>" >> $TEMP_FILE
+  echo "Subject: FIMK <%= @from %>\n" >> $TEMP_FILE
+  echo "STOPPED" >> $TEMP_FILE
+  echo <%= "http://#{node['ipaddress']}:6886/nxt?requestType=getState" %> >> $TEMP_FILE
+  echo <%= "http://#{node['ipaddress']}:7886/nxt?requestType=getState" %> >> $TEMP_FILE
+
+  ssmtp <%= @to %> < $TEMP_FILE
+<% end %>
+  sleep 10
+end script

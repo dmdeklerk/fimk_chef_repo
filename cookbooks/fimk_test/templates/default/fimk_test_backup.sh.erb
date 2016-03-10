@@ -1,0 +1,13 @@
+#!/bin/sh
+# must check node['fimk_test']['properties']['isTestNet'] to see if we are on testnet
+echo "Stopping fimk_test"
+stop fimk_test
+echo "Creating backup"
+FOLDER=<%= @properties[:isTestnet]=='true' ? 'fim_test_db' : 'fim_db' %>
+DIR_NAME=$FOLDER-$(date +%Y%m%d)
+mkdir -p /home/fimk_test/backup/$DIR_NAME
+cp -a /home/fimk_test/fim/$FOLDER/. /home/fimk_test/backup/$DIR_NAME/
+echo "Backup saved, starting fimk_test"
+start fimk_test
+find /home/fimk_test/backup/ -mtime +7 -exec rm {} \;
+find /home/fimk_test/backup/ -type d -empty -delete

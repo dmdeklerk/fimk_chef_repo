@@ -9,6 +9,7 @@ config={}
 current_dir=File.dirname(__FILE__)
 files_dir= {
   'fimk' => File.expand_path(File.join(current_dir, 'cookbooks/fimk/files/default')),
+  'fimk_test' => File.expand_path(File.join(current_dir, 'cookbooks/fimk_test/files/default')),
   'nxt' => File.expand_path(File.join(current_dir, 'cookbooks/nxt/files/default')),
   'fimk_webapp' => File.expand_path(File.join(current_dir, 'cookbooks/fimk_webapp/files/default'))
 }
@@ -25,7 +26,7 @@ OptionParser.new do |opts|
   opts.on("-n", "--nodes X,Y,Z", Array, "Override list of nodes'") do |nodes|
     options[:nodes] = nodes
   end
-  opts.on("-r", "--run-list fimk,nxt,fimk_webapp,fimk_replicate", Array, "Override runlist (allowed are 'fimk','nxt','fimk_webapp','fimk_replicate')") do |run_list|
+  opts.on("-r", "--run-list fimk,fimk_test,nxt,fimk_webapp,fimk_replicate", Array, "Override runlist (allowed are 'fimk','fimk_test','nxt','fimk_webapp','fimk_replicate')") do |run_list|
     options[:run_list] = run_list
   end
   opts.on("-u","--user [ROOT]", "SSH user") do |user|
@@ -68,7 +69,7 @@ define_method(:trace) do |msg|
 end
 
 define_method(:exec) do |dir, cmd|
-  puts("Executing Command: '#{cmd}'") if options[:verbose]
+  puts("Executing Command: '#{cmd}' in dir '#{dir}'") if options[:verbose]
   Dir.chdir(dir) { system cmd }
 end
 
@@ -102,7 +103,7 @@ define_method(:compile) do |engine, source_dir|
   exec(source_dir, "export PATH=$PATH:#{java_bin} && sh compile_with_keystore.sh")
   puts "Compilation succeeded"
 
-  file_name = engine=='fimk' ? 'fim.zip' : 'nxt.zip'
+  file_name = (engine=='fimk'||engine=='fimk_test') ? 'fim.zip' : 'nxt.zip'
   exec(files_dir[engine], "rm -f #{file_name}")
   exec(source_dir, "mv -f -u #{file_name} #{files_dir[engine]}")
 end
@@ -157,10 +158,10 @@ nodes.each do |host|
 
   # Process all recipes/roles
   run_list.each do |entry|
-    supported = ['nxt','fimk','role[webserver]','fimk_webapp','fimk_replicate']
+    supported = ['nxt','fimk','fimk_test','role[webserver]','fimk_webapp','fimk_replicate']
     abort("Unsupported run_list argument (supported: #{supported})") unless supported.include?(entry)
 
-    if ['nxt','fimk'].include? entry then
+    if ['nxt','fimk','fimk_test'].include? entry then
       puts "Deploying #{entry}"
       # Do we compile or use the zip?
       if options[:compile] then
@@ -199,7 +200,7 @@ nodes.each do |host|
   end
 
   run_list.each do |entry|
-    if ['nxt','fimk'].include? entry then
+    if ['nxt','fimk','fimk_test'].include? entry then
       exec_ssh(host, user, "stop #{entry}", port)
       exec_ssh(host, user, "rm #{app_dir[entry]}/conf/nxt.properties", port)
     end
@@ -212,7 +213,7 @@ nodes.each do |host|
   exec(current_dir, "bundle exec knife solo cook #{user}@#{host} -p #{port}")
 
   run_list.each do |entry|
-    if ['nxt','fimk'].include? entry then
+    if ['nxt','fimk','fimk_test'].include? entry then
       exec_ssh(host, user, "start #{entry}", port)
     end
     if ['fimk_webapp'].include? entry then
